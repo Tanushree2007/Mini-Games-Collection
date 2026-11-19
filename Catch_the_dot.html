@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Dot Game</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f0f4ff;
+            margin: 0;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #game {
+            width: 350px;
+            height: 350px;
+            background: white;
+            border: 3px solid #333;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        #dot {
+            width: 40px;
+            height: 40px;
+            background: #ff4757;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            display: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5548e8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🎮 Catch the Dot!</h1>
+    <p>Click the dot as many times as you can in 30 seconds.</p>
+
+    <h2>Score: <span id="score">0</span></h2>
+    <h3>Time: <span id="time">30</span> seconds</h3>
+
+    <button onclick="startGame()">Start Game</button>
+
+    <div id="game">
+        <div id="dot" onclick="catchDot()"></div>
+    </div>
+
+    <script>
+        let score = 0;
+        let time = 30;
+        let timer;
+        let dot = document.getElementById("dot");
+        let game = document.getElementById("game");
+
+        function startGame() {
+            score = 0;
+            time = 30;
+
+            document.getElementById("score").innerText = score;
+            document.getElementById("time").innerText = time;
+
+            dot.style.display = "block";
+            moveDot();
+
+            clearInterval(timer);
+
+            timer = setInterval(function() {
+                time--;
+                document.getElementById("time").innerText = time;
+
+                if (time <= 0) {
+                    clearInterval(timer);
+                    dot.style.display = "none";
+                    alert("Game Over! Your score is " + score);
+                }
+            }, 1000);
+        }
+
+        function catchDot() {
+            score++;
+            document.getElementById("score").innerText = score;
+            moveDot();
+        }
+
+        function moveDot() {
+            let maxX = game.clientWidth - dot.clientWidth;
+            let maxY = game.clientHeight - dot.clientHeight;
+
+            let x = Math.random() * maxX;
+            let y = Math.random() * maxY;
+
+            dot.style.left = x + "px";
+            dot.style.top = y + "px";
+        }
+    </script>
+
+</body>
+</html>
