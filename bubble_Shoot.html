@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>✨ BUBBLE BURST ✨</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0a0a1a;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      height: 100vh;
+      max-height: 900px;
+      background: radial-gradient(circle at 20% 10%, #1e1b4b, #0f0c29, #080614);
+      box-shadow: 0 0 60px rgba(120, 80, 255, 0.3);
+      border-radius: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 600px) {
+      #game-container {
+        border-radius: 36px;
+        border: 2px solid rgba(180, 140, 255, 0.2);
+        height: 90vh;
+        max-height: 850px;
+      }
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* ----- HUD OVERLAY ----- */
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 12px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 10;
+      background: linear-gradient(to bottom, rgba(10, 5, 30, 0.8) 0%, transparent 100%);
+    }
+
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hud-row > * {
+      pointer-events: auto;
+    }
+
+    .score-board {
+      background: rgba(15, 10, 40, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .score-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(200, 190, 255, 0.7);
+      font-weight: 600;
+    }
+
+    .score-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 12px rgba(160, 120, 255, 0.8);
+      line-height: 1.2;
+    }
+
+    .level-badge {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .danger-indicator {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+
+    .danger-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .boosters-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 6px;
+      pointer-events: auto;
+      flex-wrap: wrap;
+    }
+
+    .booster-btn {
+      background: rgba(20, 15, 50, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(160, 120, 255, 0.4);
+      border-radius: 16px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .booster-btn:active {
+      transform: scale(0.94);
+    }
+
+    .booster-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border-color: #c084fc;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
+    }
+
+    .booster-count {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: #fbbf24;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .icon-btn {
+      background: rgba(20, 15, 50, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(160, 120, 255, 0.3);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.15s;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* ----- MENUS / OVERLAYS ----- */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 5, 20, 0.88);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+      padding: 20px;
+      transition: opacity 0.3s;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .logo {
+      font-size: clamp(36px, 12vw, 56px);
+      font-weight: 900;
+      background: linear-gradient(135deg, #60a5fa, #c084fc, #f472b6, #fb923c);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-align: center;
+      letter-spacing: 2px;
+      filter: drop-shadow(0 0 30px rgba(160, 120, 255, 0.5));
+      line-height: 1.1;
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .subtitle {
+      color: rgba(200, 190, 255, 0.8);
+      font-size: 14px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: -8px;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 300px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      padding: 16px 24px;
+      border: none;
+      border-radius: 20px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      transform: rotate(45deg) translateX(-100%);
+      transition: transform 0.6s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn.secondary {
+      background: rgba(30, 25, 70, 0.9);
+      border: 1px solid rgba(160, 120, 255, 0.4);
+      font-size: 15px;
+      padding: 14px 20px;
+    }
+
+    .btn.small {
+      font-size: 14px;
+      padding: 12px 16px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+      padding: 14px 10px;
+      font-size: 14px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 20px;
+      background: rgba(20, 15, 50, 0.6);
+      padding: 12px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(160, 120, 255, 0.2);
+      margin-top: 4px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: rgba(200, 190, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-value.gold {
+      color: #fbbf24;
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 4px 0;
+    }
+
+    .mode-btn {
+      padding: 8px 16px;
+      border-radius: 30px;
+      background: rgba(20, 15, 50, 0.7);
+      border: 1px solid rgba(160, 120, 255, 0.3);
+      color: rgba(200, 190, 255, 0.8);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      border-color: #c084fc;
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+    }
+
+    .difficulty-selector {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .diff-btn {
+      padding: 6px 16px;
+      border-radius: 30px;
+      background: rgba(20, 15, 50, 0.7);
+      border: 1px solid rgba(160, 120, 255, 0.3);
+      color: rgba(200, 190, 255, 0.8);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .diff-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #fff;
+      border-color: #fbbf24;
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      width: 100%;
+      max-width: 360px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .level-cell {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background: rgba(20, 15, 50, 0.7);
+      border: 1px solid rgba(160, 120, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: rgba(200, 190, 255, 0.7);
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .level-cell.unlocked {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      border-color: #a855f7;
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.4);
+    }
+
+    .level-cell.completed {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-color: #4ade80;
+    }
+
+    .level-cell.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .level-cell .stars {
+      font-size: 8px;
+      color: #fbbf24;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .back-btn {
+      background: rgba(20, 15, 50, 0.7);
+      border: 1px solid rgba(160, 120, 255, 0.3);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .back-btn:active {
+      transform: scale(0.9);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .header-row h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      flex: 1;
+    }
+
+    .toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20, 15, 50, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(160, 120, 255, 0.5);
+      border-radius: 20px;
+      padding: 16px 32px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 20px;
+      z-index: 200;
+      pointer-events: none;
+      animation: toastPop 0.4s ease-out;
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
+    }
+
+    @keyframes toastPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .combo-text {
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(28px, 8vw, 42px);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.4);
+      pointer-events: none;
+      z-index: 150;
+      animation: comboPop 0.8s ease-out forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes comboPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+      30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -80%) scale(0.9); }
+    }
+
+    .floating-score {
+      position: absolute;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fbbf24;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+      pointer-events: none;
+      z-index: 160;
+      animation: floatUp 1s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.6); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.1); }
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(160, 120, 255, 0.4);
+      border-radius: 4px;
+    }
+
+    .shop-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 340px;
+      padding: 14px 18px;
+      background: rgba(20, 15, 50, 0.7);
+      border: 1px solid rgba(160, 120, 255, 0.25);
+      border-radius: 18px;
+      color: #fff;
+    }
+
+    .shop-item-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .shop-item-icon {
+      font-size: 28px;
+    }
+
+    .shop-item-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .shop-item-desc {
+      font-size: 11px;
+      color: rgba(200, 190, 255, 0.6);
+    }
+
+    .shop-buy {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      border: none;
+      border-radius: 30px;
+      padding: 8px 18px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.15s;
+    }
+
+    .shop-buy:active {
+      transform: scale(0.94);
+    }
+
+    .shop-buy:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .coin-display {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(20, 15, 50, 0.7);
+      padding: 6px 16px;
+      border-radius: 30px;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      font-weight: 800;
+      color: #fbbf24;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD -->
+  <div class="hud" id="hud">
+    <div class="hud-row">
+      <div class="score-board">
+        <div class="score-item">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="hudScore">0</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Best</span>
+          <span class="score-value" id="hudBest">0</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="soundBtn" title="Sound">🔊</button>
+        <button class="icon-btn" id="pauseBtn" title="Pause">⏸️</button>
+      </div>
+    </div>
+    <div class="hud-row">
+      <div class="level-badge" id="hudLevel">LVL 1</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:rgba(200,190,255,0.7);font-weight:600;">COINS</span>
+        <span style="font-size:16px;font-weight:800;color:#fbbf24;" id="hudCoins">0</span>
+      </div>
+    </div>
+    <div class="danger-indicator">
+      <div class="danger-fill" id="dangerFill"></div>
+    </div>
+    <div class="boosters-row" id="boostersRow">
+      <button class="booster-btn" data-booster="bomb">💣 <span class="booster-count" id="cntBomb">0</span></button>
+      <button class="booster-btn" data-booster="rainbow">🌈 <span class="booster-count" id="cntRainbow">0</span></button>
+      <button class="booster-btn" data-booster="fire">🔥 <span class="booster-count" id="cntFire">0</span></button>
+      <button class="booster-btn" data-booster="aim">🎯 <span class="booster-count" id="cntAim">0</span></button>
+      <button class="booster-btn" data-booster="slow">⏳ <span class="booster-count" id="cntSlow">0</span></button>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="overlay" id="menuOverlay">
+    <div class="logo">BUBBLE BURST</div>
+    <div class="subtitle">Pop • Combo • Conquer</div>
+    <div class="menu-buttons">
+      <button class="btn" id="playBtn">▶ PLAY</button>
+      <button class="btn secondary" id="levelsBtn">🗺️ LEVELS</button>
+      <button class="btn secondary" id="shopBtn">🛒 SHOP</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-label">High Score</span>
+        <span class="stat-value" id="menuHighScore">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Coins</span>
+        <span class="stat-value gold" id="menuCoins">0</span>
+      </div>
+    </div>
+    <div class="mode-selector" id="modeSelector">
+      <button class="mode-btn active" data-mode="classic">Classic</button>
+      <button class="mode-btn" data-mode="endless">Endless</button>
+      <button class="mode-btn" data-mode="time">Time</button>
+      <button class="mode-btn" data-mode="daily">Daily</button>
+    </div>
+    <div class="difficulty-selector" id="difficultySelector">
+      <button class="diff-btn" data-diff="easy">Easy</button>
+      <button class="diff-btn active" data-diff="normal">Normal</button>
+      <button class="diff-btn" data-diff="hard">Hard</button>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div class="overlay hidden" id="levelOverlay">
+    <div class="header-row">
+      <button class="back-btn" id="levelBackBtn">←</button>
+      <h2>SELECT LEVEL</h2>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="overlay hidden" id="shopOverlay">
+    <div class="header-row">
+      <button class="back-btn" id="shopBackBtn">←</button>
+      <h2>SHOP</h2>
+      <div class="coin-display">🪙 <span id="shopCoins">0</span></div>
+    </div>
+    <div id="shopItems" style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px;align-items:center;"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div class="overlay hidden" id="pauseOverlay">
+    <h2 style="color:#fff;font-size:26px;font-weight:800;letter-spacing:2px;">PAUSED</h2>
+    <div class="menu-buttons">
+      <button class="btn" id="resumeBtn">▶ RESUME</button>
+      <button class="btn secondary" id="restartBtn">🔄 RESTART</button>
+      <button class="btn secondary" id="quitBtn">🏠 MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="overlay hidden" id="gameOverOverlay">
+    <h2 style="color:#ef4444;font-size:30px;font-weight:900;letter-spacing:2px;">GAME OVER</h2>
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="goScore">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Best</span>
+        <span class="stat-value" id="goBest">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Level</span>
+        <span class="stat-value" id="goLevel">1</span>
+      </div>
+    </div>
+    <div style="color:#fbbf24;font-weight:700;font-size:16px;" id="goReward">+0 🪙</div>
+    <div class="menu-buttons">
+      <button class="btn" id="retryBtn">🔄 RETRY</button>
+      <button class="btn secondary" id="goHomeBtn">🏠 HOME</button>
+    </div>
+  </div>
+
+  <!-- VICTORY -->
+  <div class="overlay hidden" id="victoryOverlay">
+    <h2 style="color:#22c55e;font-size:30px;font-weight:900;letter-spacing:2px;">LEVEL CLEAR!</h2>
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="vScore">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Reward</span>
+        <span class="stat-value gold" id="vReward">0</span>
+      </div>
+    </div>
+    <div style="font-size:20px;color:#fbbf24;" id="vStars">⭐⭐⭐</div>
+    <div class="menu-buttons">
+      <button class="btn" id="nextLevelBtn">▶ NEXT LEVEL</button>
+      <button class="btn secondary" id="replayBtn">🔄 REPLAY</button>
+      <button class="btn secondary" id="vHomeBtn">🏠 HOME</button>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ----- CONSTANTS -----
+  const BUBBLE_RADIUS = 14;
+  const BUBBLE_DIAMETER = BUBBLE_RADIUS * 2;
+  const GRID_COLS = 12;
+  const GRID_ROWS = 10;
+  const BOARD_TOP = 100;
+  const DANGER_LINE = 0.85;
+
+  const COLORS = ['#3b82f6', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#eab308', '#22c55e'];
+  const COLOR_NAMES = ['blue', 'pink', 'purple', 'cyan', 'orange', 'yellow', 'green'];
+
+  // ----- GAME STATE -----
+  let state = {
+    mode: 'classic',
+    difficulty: 'normal',
+    level: 1,
+    score: 0,
+    bestScore: 0,
+    coins: 0,
+    shots: 0,
+    shotsSinceShift: 0,
+    shotsForShift: 10,
+    boardOffsetY: 0,
+    grid: [],
+    currentBubble: null,
+    nextBubble: null,
+    projectile: null,
+    particles: [],
+    fallingBubbles: [],
+    popRings: [],
+    floatingScores: [],
+    comboCount: 0,
+    comboMultiplier: 1,
+    dangerLineY: 0,
+    gameOver: false,
+    paused: false,
+    playing: false,
+    aiming: false,
+    aimAngle: -Math.PI / 2,
+    launcherX: 0,
+    launcherY: 0,
+    recoil: 0,
+    boosters: {
+      bomb: 2,
+      rainbow: 1,
+      fire: 1,
+      aim: 2,
+      slow: 1
+    },
+    activeBooster: null,
+    aimExtended: false,
+    slowMotion: false,
+    slowMotionTimer: 0,
+    levelProgress: {},
+    unlockedLevels: 1,
+    highestUnlocked: 1,
+    levelStars: {},
+    timeLeft: 0,
+    timeChallenge: false,
+    dailySeed: 0,
+    animationTime: 0,
+    boardShiftWarning: false,
+    boardShiftTimer: 0,
+    screenShake: 0,
+    soundOn: true,
+    particlesBg: [],
+    colorCount: 5
+  };
+
+  // ----- CANVAS -----
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0;
+
+  function resizeCanvas() {
+    const container = document.getElementById('game-container');
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    state.launcherX = W / 2;
+    state.launcherY = H - 60;
+    state.dangerLineY = H * DANGER_LINE;
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ----- AUDIO -----
+  let audioCtx = null;
+  let soundEnabled = true;
+
+  function initAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playSound(type, freq, duration, vol) {
+    if (!soundEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'shoot') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      } else if (type === 'pop') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq || 400, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+        gain.gain.setValueAtTime(vol || 0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      } else if (type === 'bounce') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.06);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'combo') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.2);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.26);
+      } else if (type === 'win') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.setValueAtTime(600, now + 0.1);
+        osc.frequency.setValueAtTime(800, now + 0.2);
+        osc.frequency.setValueAtTime(1200, now + 0.3);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } else if (type === 'lose') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      } else if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } else if (type === 'booster') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.36);
+      }
+    } catch (e) { /* ignore audio errors */ }
+  }
+
+  // ----- GRID UTILITIES -----
+  function gridToPixel(row, col) {
+    const cellW = W / GRID_COLS;
+    const cellH = BUBBLE_DIAMETER * 0.9;
+    let x = col * cellW + cellW / 2;
+    let y = BOARD_TOP + row * cellH + state.boardOffsetY + BUBBLE_RADIUS;
+    if (row % 2 === 1) {
+      x += cellW / 2;
+    }
+    return { x, y };
+  }
+
+  function pixelToGrid(px, py) {
+    const cellW = W / GRID_COLS;
+    const cellH = BUBBLE_DIAMETER * 0.9;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (r % 2 === 1 && c === GRID_COLS - 1) continue;
+        const pos = gridToPixel(r, c);
+        const dx = px - pos.x;
+        const dy = py - pos.y;
+        if (dx * dx + dy * dy < BUBBLE_RADIUS * BUBBLE_RADIUS * 1.8) {
+          return { row: r, col: c };
+        }
+      }
+    }
+    return null;
+  }
+
+  function isAdjacent(r1, c1, r2, c2) {
+    if (r1 === r2 && Math.abs(c1 - c2) === 1) return true;
+    if (Math.abs(r1 - r2) === 1) {
+      if (r1 % 2 === 0) {
+        if (c1 === c2 || c1 === c2 + 1) return true;
+      } else {
+        if (c1 === c2 || c1 === c2 - 1) return true;
+      }
+    }
+    return false;
+  }
+
+  // ----- LEVEL GENERATION -----
+  function generateLevel(level, difficulty) {
+    const grid = [];
+    const colorCount = Math.min(5 + Math.floor(level / 8), COLORS.length);
+    state.colorCount = Math.min(colorCount, COLORS.length);
+
+    const rows = Math.min(6 + Math.floor(level / 4), 9);
+    const density = difficulty === 'easy' ? 0.6 : difficulty === 'hard' ? 0.9 : 0.75;
+
+    for (let r = 0; r < GRID_ROWS; r++) {
+      grid[r] = [];
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (r % 2 === 1 && c === GRID_COLS - 1) {
+          grid[r][c] = null;
+          continue;
+        }
+        if (r < rows && Math.random() < density) {
+          const colorIdx = Math.floor(Math.random() * state.colorCount);
+          grid[r][c] = {
+            color: colorIdx,
+            colorHex: COLORS[colorIdx],
+            isSpecial: false,
+            specialType: null
+          };
+        } else {
+          grid[r][c] = null;
+        }
+      }
+    }
+
+    // Add some clusters for easier matches
+    if (level <= 3) {
+      for (let i = 0; i < 8; i++) {
+        const r = Math.floor(Math.random() * Math.min(3, rows));
+        let c = Math.floor(Math.random() * (GRID_COLS - 1));
+        if (r % 2 === 1 && c === GRID_COLS - 1) c--;
+        const color = Math.floor(Math.random() * state.colorCount);
+        grid[r][c] = { color, colorHex: COLORS[color], isSpecial: false, specialType: null };
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (const [dr, dc] of dirs) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && grid[nr] && grid[nr][nc] !== undefined) {
+            if (grid[nr][nc] === null && Math.random() < 0.6) {
+              grid[nr][nc] = { color, colorHex: COLORS[color], isSpecial: false, specialType: null };
+            }
+          }
+        }
+      }
+    }
+
+    return grid;
+  }
+
+  // ----- START GAME -----
+  function startGame(mode, level, difficulty) {
+    state.mode = mode || state.mode;
+    state.difficulty = difficulty || state.difficulty;
+    state.level = level || 1;
+
+    if (mode === 'daily') {
+      const today = new Date();
+      state.dailySeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+      state.level = 1;
+    }
+
+    const diffMap = { easy: 0.8, normal: 1.0, hard: 1.3 };
+    const diffMult = diffMap[state.difficulty] || 1.0;
+
+    state.grid = generateLevel(state.level, state.difficulty);
+    state.score = 0;
+    state.shots = 0;
+    state.shotsSinceShift = 0;
+    state.shotsForShift = Math.round(10 / diffMult);
+    state.boardOffsetY = 0;
+    state.gameOver = false;
+    state.paused = false;
+    state.playing = true;
+    state.comboCount = 0;
+    state.comboMultiplier = 1;
+    state.projectile = null;
+    state.particles = [];
+    state.fallingBubbles = [];
+    state.popRings = [];
+    state.floatingScores = [];
+    state.activeBooster = null;
+    state.aimExtended = false;
+    state.slowMotion = false;
+    state.slowMotionTimer = 0;
+    state.screenShake = 0;
+    state.boardShiftWarning = false;
+    state.boardShiftTimer = 0;
+
+    state.currentBubble = randomBubbleColor();
+    state.nextBubble = randomBubbleColor();
+
+    if (mode === 'time') {
+      state.timeChallenge = true;
+      state.timeLeft = 120;
+    } else {
+      state.timeChallenge = false;
+      state.timeLeft = 0;
+    }
+
+    if (mode === 'endless') {
+      state.shotsForShift = Math.max(4, 6 - Math.floor(state.level / 10));
+    }
+
+    document.getElementById('hud').style.display = 'flex';
+    hideAllOverlays();
+    updateHUD();
+    initAudio();
+  }
+
+  function randomBubbleColor() {
+    const maxColor = Math.min(state.colorCount, COLORS.length);
+    const idx = Math.floor(Math.random() * maxColor);
+    return { color: idx, colorHex: COLORS[idx] };
+  }
+
+  // ----- HUD UPDATE -----
+  function updateHUD() {
+    document.getElementById('hudScore').textContent = state.score;
+    document.getElementById('hudBest').textContent = state.bestScore;
+    document.getElementById('hudLevel').textContent = 'LVL ' + state.level;
+    document.getElementById('hudCoins').textContent = state.coins;
+
+    const maxOffset = state.dangerLineY - BOARD_TOP - (GRID_ROWS * BUBBLE_DIAMETER * 0.9);
+    const dangerPct = Math.min(100, (state.boardOffsetY / Math.max(1, maxOffset)) * 100);
+    document.getElementById('dangerFill').style.width = dangerPct + '%';
+
+    document.getElementById('cntBomb').textContent = state.boosters.bomb;
+    document.getElementById('cntRainbow').textContent = state.boosters.rainbow;
+    document.getElementById('cntFire').textContent = state.boosters.fire;
+    document.getElementById('cntAim').textContent = state.boosters.aim;
+    document.getElementById('cntSlow').textContent = state.boosters.slow;
+  }
+
+  // ----- GAME LOGIC -----
+  function shootBubble(angle) {
+    if (state.projectile || state.gameOver || state.paused) return;
+
+    // INCREASED SPEED: 14 -> 28 (slowMotion: 8 -> 16)
+    const speed = state.slowMotion ? 16 : 28;
+    const bubble = state.currentBubble || randomBubbleColor();
+    state.projectile = {
+      x: state.launcherX,
+      y: state.launcherY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: bubble.color,
+      colorHex: bubble.colorHex,
+      radius: BUBBLE_RADIUS,
+      trail: []
+    };
+
+    state.currentBubble = state.nextBubble || randomBubbleColor();
+    state.nextBubble = randomBubbleColor();
+    state.shots++;
+    state.shotsSinceShift++;
+    state.recoil = 1;
+
+    playSound('shoot');
+
+    if (state.shotsSinceShift >= state.shotsForShift && !state.boardShiftWarning) {
+      state.boardShiftWarning = true;
+      state.boardShiftTimer = 2.0;
+      showToast('⚠️ BOARD SHIFTING SOON');
+    }
+  }
+
+  function updateProjectile(dt) {
+    if (!state.projectile) return;
+
+    const p = state.projectile;
+    // Faster movement for high speed
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    p.trail.push({ x: p.x, y: p.y });
+    if (p.trail.length > 8) p.trail.shift();
+
+    if (p.x - p.radius < 0) {
+      p.x = p.radius;
+      p.vx = Math.abs(p.vx);
+      playSound('bounce');
+    }
+    if (p.x + p.radius > W) {
+      p.x = W - p.radius;
+      p.vx = -Math.abs(p.vx);
+      playSound('bounce');
+    }
+
+    if (p.y - p.radius < 0) {
+      attachBubble(p);
+      return;
+    }
+
+    // Check collision with grid bubbles
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        const b = state.grid[r][c];
+        if (!b) continue;
+        const pos = gridToPixel(r, c);
+        const dx = p.x - pos.x;
+        const dy = p.y - pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < BUBBLE_RADIUS * 1.8) {
+          attachBubble(p);
+          return;
+        }
+      }
+    }
+
+    if (p.y > H + 50) {
+      state.projectile = null;
+    }
+  }
+
+  function attachBubble(p) {
+    // Find best grid position
+    let bestDist = Infinity;
+    let bestPos = null;
+    let bestR = -1, bestC = -1;
+
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (r % 2 === 1 && c === GRID_COLS - 1) continue;
+        if (state.grid[r][c] !== null) continue;
+        const pos = gridToPixel(r, c);
+        const dx = p.x - pos.x;
+        const dy = p.y - pos.y;
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestPos = pos;
+          bestR = r;
+          bestC = c;
+        }
+      }
+    }
+
+    if (bestR === -1) {
+      // No empty spot — find nearest occupied
+      for (let r = 0; r < GRID_ROWS; r++) {
+        if (!state.grid[r]) continue;
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (r % 2 === 1 && c === GRID_COLS - 1) continue;
+          const pos = gridToPixel(r, c);
+          const dx = p.x - pos.x;
+          const dy = p.y - pos.y;
+          const dist = dx * dx + dy * dy;
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestR = r;
+            bestC = c;
+          }
+        }
+      }
+    }
+
+    if (bestR === -1) {
+      state.projectile = null;
+      return;
+    }
+
+    // Find adjacent empty slot near bestR/bestC
+    if (state.grid[bestR] && state.grid[bestR][bestC] !== null) {
+      const neighbors = [];
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (r % 2 === 1 && c === GRID_COLS - 1) continue;
+          if (state.grid[r][c] === null && isAdjacent(r, c, bestR, bestC)) {
+            neighbors.push({ r, c });
+          }
+        }
+      }
+      if (neighbors.length > 0) {
+        const n = neighbors[Math.floor(Math.random() * neighbors.length)];
+        bestR = n.r;
+        bestC = n.c;
+      }
+    }
+
+    if (!state.grid[bestR]) state.grid[bestR] = [];
+    state.grid[bestR][bestC] = {
+      color: p.color,
+      colorHex: p.colorHex,
+      isSpecial: false,
+      specialType: null
+    };
+
+    state.projectile = null;
+
+    // Check for matches
+    const matched = findMatches(bestR, bestC);
+    if (matched.length >= 3) {
+      processMatches(matched, bestR, bestC);
+    } else {
+      // No match — check board shift
+      if (state.shotsSinceShift >= state.shotsForShift) {
+        shiftBoardDown();
+      }
+    }
+
+    checkBoardState();
+    updateHUD();
+  }
+
+  function findMatches(startR, startC) {
+    const target = state.grid[startR] && state.grid[startR][startC];
+    if (!target) return [];
+
+    const visited = new Set();
+    const queue = [{ r: startR, c: startC }];
+    const matched = [];
+
+    while (queue.length > 0) {
+      const { r, c } = queue.shift();
+      const key = r + ',' + c;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      if (!state.grid[r] || !state.grid[r][c]) continue;
+      const b = state.grid[r][c];
+      if (b.color !== target.color) continue;
+
+      matched.push({ r, c });
+
+      for (let nr = 0; nr < GRID_ROWS; nr++) {
+        for (let nc = 0; nc < GRID_COLS; nc++) {
+          if (state.grid[nr] && state.grid[nr][nc] && isAdjacent(r, c, nr, nc)) {
+            if (!visited.has(nr + ',' + nc)) {
+              queue.push({ r: nr, c: nc });
+            }
+          }
+        }
+      }
+    }
+
+    return matched;
+  }
+
+  function processMatches(matched, centerR, centerC) {
+    let points = 0;
+    const basePoints = 10;
+    const groupSize = matched.length;
+
+    points = basePoints * groupSize * Math.min(groupSize, 8);
+
+    state.comboCount++;
+    state.comboMultiplier = Math.min(1 + state.comboCount * 0.25, 5);
+
+    const totalPoints = Math.floor(points * state.comboMultiplier);
+    state.score += totalPoints;
+
+    if (state.score > state.bestScore) {
+      state.bestScore = state.score;
+    }
+
+    // Pop animations
+    for (const { r, c } of matched) {
+      const pos = gridToPixel(r, c);
+      const b = state.grid[r][c];
+      if (b) {
+        spawnPopEffect(pos.x, pos.y, b.colorHex);
+      }
+      state.grid[r][c] = null;
+    }
+
+    // Floating score
+    const centerPos = gridToPixel(centerR, centerC);
+    showFloatingScore(centerPos.x, centerPos.y, '+' + totalPoints);
+
+    // Combo text
+    const comboTexts = ['NICE!', 'GREAT!', 'AMAZING!', 'SUPER COMBO!', 'MEGA BURST!', 'LEGENDARY!'];
+    const comboIdx = Math.min(state.comboCount - 1, comboTexts.length - 1);
+    if (state.comboCount >= 2) {
+      showComboText(comboTexts[comboIdx]);
+      playSound('combo');
+    }
+
+    playSound('pop', 350 + Math.random() * 300, 0.1, 0.15);
+
+    // Screen shake for big matches
+    if (groupSize >= 6) {
+      state.screenShake = 8;
+    } else if (groupSize >= 4) {
+      state.screenShake = 4;
+    }
+
+    // Drop disconnected bubbles
+    dropFloatingBubbles();
+
+    // Coins
+    const coinReward = Math.floor(groupSize / 2);
+    state.coins += coinReward;
+
+    // Reset combo if no chain
+    setTimeout(() => {
+      state.comboCount = Math.max(0, state.comboCount - 1);
+    }, 2000);
+  }
+
+  function dropFloatingBubbles() {
+    const connected = new Set();
+    const queue = [];
+
+    // Find all connected to top
+    for (let c = 0; c < GRID_COLS; c++) {
+      if (state.grid[0] && state.grid[0][c]) {
+        queue.push({ r: 0, c });
+        connected.add('0,' + c);
+      }
+    }
+
+    while (queue.length > 0) {
+      const { r, c } = queue.shift();
+      for (let nr = 0; nr < GRID_ROWS; nr++) {
+        for (let nc = 0; nc < GRID_COLS; nc++) {
+          if (state.grid[nr] && state.grid[nr][nc] && isAdjacent(r, c, nr, nc)) {
+            const key = nr + ',' + nc;
+            if (!connected.has(key)) {
+              connected.add(key);
+              queue.push({ r: nr, c: nc });
+            }
+          }
+        }
+      }
+    }
+
+    // Drop unconnected
+    let droppedCount = 0;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (state.grid[r][c] && !connected.has(r + ',' + c)) {
+          const pos = gridToPixel(r, c);
+          state.fallingBubbles.push({
+            x: pos.x,
+            y: pos.y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: -2 - Math.random() * 3,
+            colorHex: state.grid[r][c].colorHex,
+            radius: BUBBLE_RADIUS
+          });
+          state.grid[r][c] = null;
+          droppedCount++;
+        }
+      }
+    }
+
+    if (droppedCount > 0) {
+      const bonus = droppedCount * 15;
+      state.score += bonus;
+      state.coins += Math.floor(droppedCount / 2);
+      showFloatingScore(W / 2, H / 2, '+' + bonus + ' DROP!');
+      playSound('pop', 200, 0.15, 0.2);
+    }
+  }
+
+  function shiftBoardDown() {
+    state.shotsSinceShift = 0;
+    state.boardShiftWarning = false;
+    state.boardShiftTimer = 0;
+
+    // Move all bubbles down one row
+    const newGrid = [];
+    for (let r = GRID_ROWS - 1; r >= 0; r--) {
+      newGrid[r] = [];
+      for (let c = 0; c < GRID_COLS; c++) {
+        newGrid[r][c] = null;
+      }
+    }
+
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (state.grid[r][c]) {
+          if (r + 1 < GRID_ROWS) {
+            if (!newGrid[r + 1]) newGrid[r + 1] = [];
+            newGrid[r + 1][c] = state.grid[r][c];
+          }
+        }
+      }
+    }
+
+    // Add new row at top
+    newGrid[0] = [];
+    for (let c = 0; c < GRID_COLS; c++) {
+      if (Math.random() < 0.7) {
+        const colorIdx = Math.floor(Math.random() * state.colorCount);
+        newGrid[0][c] = {
+          color: colorIdx,
+          colorHex: COLORS[colorIdx],
+          isSpecial: false,
+          specialType: null
+        };
+      } else {
+        newGrid[0][c] = null;
+      }
+    }
+
+    state.grid = newGrid;
+    state.boardOffsetY += BUBBLE_DIAMETER * 0.9;
+
+    playSound('bounce');
+    showToast('BOARD SHIFTED');
+
+    checkBoardState();
+  }
+
+  function checkBoardState() {
+    // Check if any bubble crossed danger line
+    const dangerY = state.dangerLineY;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (state.grid[r][c]) {
+          const pos = gridToPixel(r, c);
+          if (pos.y + BUBBLE_RADIUS >= dangerY) {
+            endGame();
+            return;
+          }
+        }
+      }
+    }
+
+    // Check if board is empty
+    let hasBubbles = false;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (state.grid[r][c]) { hasBubbles = true; break; }
+      }
+      if (hasBubbles) break;
+    }
+
+    if (!hasBubbles) {
+      levelComplete();
+    }
+  }
+
+  function levelComplete() {
+    state.playing = false;
+    playSound('win');
+
+    const reward = 50 + state.level * 10;
+    state.coins += reward;
+    state.bestScore = Math.max(state.bestScore, state.score);
+
+    // Stars based on score
+    let stars = 1;
+    if (state.score > 500) stars = 2;
+    if (state.score > 1500) stars = 3;
+
+    state.levelStars[state.level] = Math.max(state.levelStars[state.level] || 0, stars);
+    state.unlockedLevels = Math.max(state.unlockedLevels, state.level + 1);
+
+    document.getElementById('vScore').textContent = state.score;
+    document.getElementById('vReward').textContent = reward;
+    document.getElementById('vStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+    saveProgress();
+    showOverlay('victoryOverlay');
+    updateHUD();
+  }
+
+  function endGame() {
+    state.gameOver = true;
+    state.playing = false;
+    playSound('lose');
+
+    const reward = Math.floor(state.score / 10);
+    state.coins += reward;
+    state.bestScore = Math.max(state.bestScore, state.score);
+
+    document.getElementById('goScore').textContent = state.score;
+    document.getElementById('goBest').textContent = state.bestScore;
+    document.getElementById('goLevel').textContent = state.level;
+    document.getElementById('goReward').textContent = '+' + reward + ' 🪙';
+
+    saveProgress();
+    showOverlay('gameOverOverlay');
+    updateHUD();
+  }
+
+  // ----- EFFECTS -----
+  function spawnPopEffect(x, y, colorHex) {
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 3;
+      state.particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0.6 + Math.random() * 0.3,
+        maxLife: 0.6 + Math.random() * 0.3,
+        color: colorHex,
+        size: 2 + Math.random() * 3
+      });
+    }
+    state.popRings.push({
+      x, y,
+      radius: BUBBLE_RADIUS,
+      maxRadius: BUBBLE_RADIUS * 2.5,
+      life: 0.4,
+      maxLife: 0.4,
+      color: colorHex
+    });
+  }
+
+  function showFloatingScore(x, y, text) {
+    state.floatingScores.push({
+      x, y,
+      text,
+      life: 1.0,
+      maxLife: 1.0
+    });
+  }
+
+  function showComboText(text) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'combo-text';
+    el.textContent = text;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
+  function showToast(text) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }
+
+  // ----- UPDATE -----
+  let lastTime = 0;
+
+  function update(dt) {
+    state.animationTime += dt;
+
+    if (state.paused || state.gameOver) return;
+    if (!state.playing && state.playing !== false) return;
+
+    // Background particles
+    if (state.particlesBg.length < 30) {
+      state.particlesBg.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        radius: 1 + Math.random() * 3,
+        speed: 0.2 + Math.random() * 0.5,
+        alpha: 0.1 + Math.random() * 0.3,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      });
+    }
+    for (const p of state.particlesBg) {
+      p.y -= p.speed * dt;
+      if (p.y < -10) {
+        p.y = H + 10;
+        p.x = Math.random() * W;
+      }
+    }
+
+    // Time challenge
+    if (state.timeChallenge && state.playing && !state.paused) {
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        endGame();
+        return;
+      }
+    }
+
+    // Board shift warning countdown
+    if (state.boardShiftWarning && !state.gameOver && state.playing) {
+      state.boardShiftTimer -= dt;
+      if (state.boardShiftTimer <= 0) {
+        shiftBoardDown();
+      }
+    }
+
+    // Slow motion
+    if (state.slowMotion) {
+      state.slowMotionTimer -= dt;
+      if (state.slowMotionTimer <= 0) {
+        state.slowMotion = false;
+      }
+    }
+
+    // Recoil
+    if (state.recoil > 0) {
+      state.recoil = Math.max(0, state.recoil - dt * 4);
+    }
+
+    // Projectile
+    updateProjectile(dt);
+
+    // Particles
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const p = state.particles[i];
+      p.x += p.vx * dt * 60;
+      p.y += p.vy * dt * 60;
+      p.vy += 0.1 * dt * 60;
+      p.life -= dt;
+      if (p.life <= 0) {
+        state.particles.splice(i, 1);
+      }
+    }
+
+    // Pop rings
+    for (let i = state.popRings.length - 1; i >= 0; i--) {
+      const r = state.popRings[i];
+      r.radius += (r.maxRadius - r.radius) * dt * 8;
+      r.life -= dt;
+      if (r.life <= 0) {
+        state.popRings.splice(i, 1);
+      }
+    }
+
+    // Falling bubbles
+    for (let i = state.fallingBubbles.length - 1; i >= 0; i--) {
+      const b = state.fallingBubbles[i];
+      b.x += b.vx * dt * 60;
+      b.y += b.vy * dt * 60;
+      b.vy += 0.5 * dt * 60;
+      if (b.y > H + 50) {
+        state.fallingBubbles.splice(i, 1);
+      }
+    }
+
+    // Floating scores
+    for (let i = state.floatingScores.length - 1; i >= 0; i--) {
+      const f = state.floatingScores[i];
+      f.y -= 50 * dt;
+      f.life -= dt;
+      if (f.life <= 0) {
+        state.floatingScores.splice(i, 1);
+      }
+    }
+
+    // Screen shake
+    if (state.screenShake > 0) {
+      state.screenShake = Math.max(0, state.screenShake - dt * 20);
+    }
+
+    updateHUD();
+  }
+
+  // ----- RENDER -----
+  function render() {
+    ctx.save();
+
+    // Screen shake
+    if (state.screenShake > 0) {
+      const sx = (Math.random() - 0.5) * state.screenShake;
+      const sy = (Math.random() - 0.5) * state.screenShake;
+      ctx.translate(sx, sy);
+    }
+
+    // Clear
+    ctx.clearRect(-20, -20, W + 40, H + 40);
+
+    // Background
+    const bgGrad = ctx.createRadialGradient(W * 0.3, H * 0.2, 0, W * 0.5, H * 0.5, W * 0.8);
+    bgGrad.addColorStop(0, '#1e1b4b');
+    bgGrad.addColorStop(0.5, '#0f0c29');
+    bgGrad.addColorStop(1, '#080614');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Background particles
+    for (const p of state.particlesBg) {
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Danger line
+    const dangerY = state.dangerLineY;
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.moveTo(0, dangerY);
+    ctx.lineTo(W, dangerY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Danger zone gradient
+    const dangerGrad = ctx.createLinearGradient(0, dangerY - 40, 0, dangerY + 40);
+    dangerGrad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+    dangerGrad.addColorStop(1, 'rgba(239, 68, 68, 0.08)');
+    ctx.fillStyle = dangerGrad;
+    ctx.fillRect(0, dangerY - 40, W, 80);
+
+    // Draw grid bubbles
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        const b = state.grid[r][c];
+        if (!b) continue;
+        const pos = gridToPixel(r, c);
+        drawBubble(pos.x, pos.y, b.colorHex, BUBBLE_RADIUS);
+      }
+    }
+
+    // Draw falling bubbles
+    for (const b of state.fallingBubbles) {
+      ctx.globalAlpha = Math.max(0, 1 - (b.y - H) / 100);
+      drawBubble(b.x, b.y, b.colorHex, b.radius);
+      ctx.globalAlpha = 1;
+    }
+
+    // Pop rings
+    for (const ring of state.popRings) {
+      const alpha = ring.life / ring.maxLife;
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.strokeStyle = ring.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Particles
+    for (const p of state.particles) {
+      const alpha = p.life / p.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Aiming guide
+    if (state.playing && !state.paused && !state.gameOver) {
+      const angle = state.aimAngle;
+      const startX = state.launcherX;
+      const startY = state.launcherY - state.recoil * 8;
+
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = '#a78bfa';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+
+      let endX = startX;
+      let endY = startY;
+      let dirX = Math.cos(angle);
+      let dirY = Math.sin(angle);
+      let steps = state.aimExtended ? 600 : 250;
+      let stepSize = 4;
+
+      for (let i = 0; i < steps; i += stepSize) {
+        let nx = endX + dirX * stepSize;
+        let ny = endY + dirY * stepSize;
+
+        if (nx < 0 || nx > W) {
+          dirX = -dirX;
+          nx = endX + dirX * stepSize;
+        }
+        if (ny < 0) break;
+
+        // Check collision
+        let hit = false;
+        for (let r = 0; r < GRID_ROWS; r++) {
+          if (!state.grid[r]) continue;
+          for (let c = 0; c < GRID_COLS; c++) {
+            if (!state.grid[r][c]) continue;
+            const pos = gridToPixel(r, c);
+            const dx = nx - pos.x;
+            const dy = ny - pos.y;
+            if (dx * dx + dy * dy < BUBBLE_RADIUS * BUBBLE_RADIUS * 1.5) {
+              hit = true;
+              break;
+            }
+          }
+          if (hit) break;
+        }
+        if (hit) break;
+
+        endX = nx;
+        endY = ny;
+      }
+
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      // Aim dot
+      ctx.fillStyle = 'rgba(167, 139, 250, 0.8)';
+      ctx.beginPath();
+      ctx.arc(endX, endY, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Projectile
+    if (state.projectile) {
+      const p = state.projectile;
+      // Trail
+      for (let i = 0; i < p.trail.length; i++) {
+        const t = p.trail[i];
+        const alpha = (i / p.trail.length) * 0.3;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.colorHex;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, p.radius * (i / p.trail.length), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      drawBubble(p.x, p.y, p.colorHex, p.radius);
+    }
+
+    // Launcher
+    if (state.playing && !state.gameOver) {
+      const lx = state.launcherX;
+      const ly = state.launcherY - state.recoil * 8;
+
+      // Launcher base
+      ctx.fillStyle = 'rgba(30, 25, 70, 0.9)';
+      ctx.beginPath();
+      ctx.ellipse(lx, ly + 20, 35, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(160, 120, 255, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Launcher barrel
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(state.aimAngle + Math.PI / 2);
+      ctx.fillStyle = 'rgba(60, 50, 120, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(-12, -30, 24, 40, [8, 8, 0, 0]);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(160, 120, 255, 0.5)';
+      ctx.stroke();
+      ctx.restore();
+
+      // Current bubble
+      if (state.currentBubble) {
+        drawBubble(lx, ly - 10, state.currentBubble.colorHex, BUBBLE_RADIUS);
+      }
+
+      // Next bubble preview
+      const nx = lx + 55;
+      const ny = ly + 10;
+      ctx.fillStyle = 'rgba(30, 25, 70, 0.7)';
+      ctx.beginPath();
+      ctx.arc(nx, ny, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(160, 120, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      if (state.nextBubble) {
+        drawBubble(nx, ny, state.nextBubble.colorHex, 12);
+      }
+      ctx.fillStyle = 'rgba(200, 190, 255, 0.5)';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NEXT', nx, ny + 28);
+    }
+
+    // Floating scores
+    for (const f of state.floatingScores) {
+      const alpha = f.life / f.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 20px "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.globalAlpha = 1;
+    }
+
+    // Time challenge timer
+    if (state.timeChallenge && state.playing) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 50, 8, 100, 30, 15);
+      ctx.fill();
+      ctx.fillStyle = state.timeLeft < 20 ? '#ef4444' : '#fff';
+      ctx.font = 'bold 18px "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(Math.ceil(state.timeLeft) + 's', W / 2, 30);
+    }
+
+    // Board shift warning overlay
+    if (state.boardShiftWarning && state.playing) {
+      ctx.globalAlpha = 0.3 + Math.sin(state.animationTime * 10) * 0.15;
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(0, 0, W, 4);
+      ctx.fillRect(0, H - 4, W, 4);
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
+  }
+
+  function drawBubble(x, y, colorHex, radius) {
+    // Shadow
+    ctx.shadowColor = colorHex;
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 2;
+
+    // Main bubble gradient
+    const grad = ctx.createRadialGradient(
+      x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+      x, y, radius
+    );
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.15, colorHex);
+    grad.addColorStop(0.7, colorHex);
+    grad.addColorStop(1, shadeColor(colorHex, -30));
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.beginPath();
+    ctx.ellipse(x - radius * 0.3, y - radius * 0.35, radius * 0.25, radius * 0.2, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Small highlight dot
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.4, y - radius * 0.45, radius * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rim
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, radius - 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function shadeColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+    const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+    const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+  }
+
+  // ----- GAME LOOP -----
+  function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+
+    update(dt);
+    render();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // ----- EVENT HANDLERS -----
+  canvas.addEventListener('mousemove', function(e) {
+    if (!state.playing || state.paused || state.gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    state.aimAngle = Math.atan2(my - state.launcherY, mx - state.launcherX);
+    if (state.aimAngle > -0.1) state.aimAngle = -0.1;
+    if (state.aimAngle < -Math.PI + 0.1) state.aimAngle = -Math.PI + 0.1;
+  });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!state.playing || state.paused || state.gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const mx = touch.clientX - rect.left;
+    const my = touch.clientY - rect.top;
+    state.aimAngle = Math.atan2(my - state.launcherY, mx - state.launcherX);
+    if (state.aimAngle > -0.1) state.aimAngle = -0.1;
+    if (state.aimAngle < -Math.PI + 0.1) state.aimAngle = -Math.PI + 0.1;
+  }, { passive: false });
+
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (!state.playing || state.paused || state.gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const mx = touch.clientX - rect.left;
+    const my = touch.clientY - rect.top;
+    state.aimAngle = Math.atan2(my - state.launcherY, mx - state.launcherX);
+    if (state.aimAngle > -0.1) state.aimAngle = -0.1;
+    if (state.aimAngle < -Math.PI + 0.1) state.aimAngle = -Math.PI + 0.1;
+    shootBubble(state.aimAngle);
+  }, { passive: false });
+
+  canvas.addEventListener('mousedown', function(e) {
+    if (!state.playing || state.paused || state.gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    state.aimAngle = Math.atan2(my - state.launcherY, mx - state.launcherX);
+    if (state.aimAngle > -0.1) state.aimAngle = -0.1;
+    if (state.aimAngle < -Math.PI + 0.1) state.aimAngle = -Math.PI + 0.1;
+    shootBubble(state.aimAngle);
+  });
+
+  // ----- UI HANDLERS -----
+  function hideAllOverlays() {
+    document.getElementById('menuOverlay').classList.add('hidden');
+    document.getElementById('levelOverlay').classList.add('hidden');
+    document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    document.getElementById('gameOverOverlay').classList.add('hidden');
+    document.getElementById('victoryOverlay').classList.add('hidden');
+    document.getElementById('hud').style.display = 'flex';
+  }
+
+  function showOverlay(id) {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById('hud').style.display = 'none';
+  }
+
+  function showMenu() {
+    state.playing = false;
+    state.paused = false;
+    state.gameOver = false;
+    document.getElementById('menuHighScore').textContent = state.bestScore;
+    document.getElementById('menuCoins').textContent = state.coins;
+    showOverlay('menuOverlay');
+  }
+
+  // Save/Load
+  function saveProgress() {
+    try {
+      localStorage.setItem('bubbleBurstSave', JSON.stringify({
+        bestScore: state.bestScore,
+        coins: state.coins,
+        unlockedLevels: state.unlockedLevels,
+        levelStars: state.levelStars
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function loadProgress() {
+    try {
+      const data = localStorage.getItem('bubbleBurstSave');
+      if (data) {
+        const parsed = JSON.parse(data);
+        state.bestScore = parsed.bestScore || 0;
+        state.coins = parsed.coins || 0;
+        state.unlockedLevels = parsed.unlockedLevels || 1;
+        state.levelStars = parsed.levelStars || {};
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // ----- BUTTON EVENTS -----
+  document.getElementById('playBtn').addEventListener('click', function() {
+    initAudio();
+    playSound('click');
+    state.level = 1;
+    startGame(state.mode, state.level, state.difficulty);
+  });
+
+  document.getElementById('levelsBtn').addEventListener('click', function() {
+    playSound('click');
+    renderLevelGrid();
+    showOverlay('levelOverlay');
+  });
+
+  document.getElementById('levelBackBtn').addEventListener('click', function() {
+    playSound('click');
+    showMenu();
+  });
+
+  document.getElementById('shopBtn').addEventListener('click', function() {
+    playSound('click');
+    renderShop();
+    showOverlay('shopOverlay');
+  });
+
+  document.getElementById('shopBackBtn').addEventListener('click', function() {
+    playSound('click');
+    showMenu();
+  });
+
+  document.getElementById('pauseBtn').addEventListener('click', function() {
+    if (!state.playing || state.gameOver) return;
+    playSound('click');
+    state.paused = true;
+    showOverlay('pauseOverlay');
+  });
+
+  document.getElementById('resumeBtn').addEventListener('click', function() {
+    playSound('click');
+    state.paused = false;
+    hideAllOverlays();
+  });
+
+  document.getElementById('restartBtn').addEventListener('click', function() {
+    playSound('click');
+    startGame(state.mode, state.level, state.difficulty);
+  });
+
+  document.getElementById('quitBtn').addEventListener('click', function() {
+    playSound('click');
+    showMenu();
+  });
+
+  document.getElementById('retryBtn').addEventListener('click', function() {
+    playSound('click');
+    startGame(state.mode, state.level, state.difficulty);
+  });
+
+  document.getElementById('goHomeBtn').addEventListener('click', function() {
+    playSound('click');
+    showMenu();
+  });
+
+  document.getElementById('nextLevelBtn').addEventListener('click', function() {
+    playSound('click');
+    state.level++;
+    state.unlockedLevels = Math.max(state.unlockedLevels, state.level);
+    startGame(state.mode, state.level, state.difficulty);
+  });
+
+  document.getElementById('replayBtn').addEventListener('click', function() {
+    playSound('click');
+    startGame(state.mode, state.level, state.difficulty);
+  });
+
+  document.getElementById('vHomeBtn').addEventListener('click', function() {
+    playSound('click');
+    showMenu();
+  });
+
+  document.getElementById('soundBtn').addEventListener('click', function() {
+    soundEnabled = !soundEnabled;
+    state.soundOn = soundEnabled;
+    this.textContent = soundEnabled ? '🔊' : '🔇';
+    if (soundEnabled) initAudio();
+    playSound('click');
+  });
+
+  // Mode selection
+  document.querySelectorAll('#modeSelector .mode-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#modeSelector .mode-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      state.mode = this.dataset.mode;
+      playSound('click');
+    });
+  });
+
+  // Difficulty selection
+  document.querySelectorAll('#difficultySelector .diff-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#difficultySelector .diff-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      state.difficulty = this.dataset.diff;
+      playSound('click');
+    });
+  });
+
+  // Booster buttons
+  document.querySelectorAll('.booster-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (!state.playing || state.gameOver || state.paused) return;
+      const booster = this.dataset.booster;
+      if (state.boosters[booster] <= 0) {
+        showToast('No ' + booster + ' boosters left!');
+        return;
+      }
+
+      // Confirm activation
+      if (state.activeBooster === booster) {
+        state.activeBooster = null;
+        this.classList.remove('active');
+        showToast('Booster cancelled');
+        return;
+      }
+
+      state.activeBooster = booster;
+      document.querySelectorAll('.booster-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      playSound('booster');
+
+      if (booster === 'aim') {
+        state.aimExtended = true;
+        state.boosters.aim--;
+        showToast('🎯 Extended aim active!');
+        setTimeout(() => {
+          state.aimExtended = false;
+          state.activeBooster = null;
+          document.querySelectorAll('.booster-btn').forEach(b => b.classList.remove('active'));
+        }, 15000);
+      } else if (booster === 'slow') {
+        state.slowMotion = true;
+        state.slowMotionTimer = 8;
+        state.boosters.slow--;
+        showToast('⏳ Slow motion active!');
+        setTimeout(() => {
+          state.slowMotion = false;
+          state.activeBooster = null;
+          document.querySelectorAll('.booster-btn').forEach(b => b.classList.remove('active'));
+        }, 8000);
+      } else if (booster === 'bomb') {
+        state.boosters.bomb--;
+        // Explode at random position near top
+        explodeArea(state.launcherX, BOARD_TOP + 50, 80);
+        showToast('💣 Bomb exploded!');
+        state.activeBooster = null;
+        this.classList.remove('active');
+      } else if (booster === 'rainbow') {
+        state.boosters.rainbow--;
+        // Make current bubble rainbow
+        state.currentBubble = { color: -1, colorHex: '#ffffff' };
+        showToast('🌈 Rainbow bubble ready!');
+        state.activeBooster = null;
+        this.classList.remove('active');
+      } else if (booster === 'fire') {
+        state.boosters.fire--;
+        // Clear a row
+        const targetRow = Math.floor(Math.random() * 3);
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (state.grid[targetRow] && state.grid[targetRow][c]) {
+            const pos = gridToPixel(targetRow, c);
+            spawnPopEffect(pos.x, pos.y, state.grid[targetRow][c].colorHex);
+            state.grid[targetRow][c] = null;
+          }
+        }
+        dropFloatingBubbles();
+        showToast('🔥 Fire cleared a row!');
+        state.activeBooster = null;
+        this.classList.remove('active');
+        playSound('pop', 200, 0.2, 0.2);
+      }
+
+      updateHUD();
+    });
+  });
+
+  function explodeArea(cx, cy, radius) {
+    for (let r = 0; r < GRID_ROWS; r++) {
+      if (!state.grid[r]) continue;
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (!state.grid[r][c]) continue;
+        const pos = gridToPixel(r, c);
+        const dx = pos.x - cx;
+        const dy = pos.y - cy;
+        if (dx * dx + dy * dy < radius * radius) {
+          spawnPopEffect(pos.x, pos.y, state.grid[r][c].colorHex);
+          state.grid[r][c] = null;
+        }
+      }
+    }
+    dropFloatingBubbles();
+    state.screenShake = 10;
+    playSound('pop', 150, 0.2, 0.25);
+  }
+
+  // ----- LEVEL GRID RENDERING -----
+  function renderLevelGrid() {
+    const grid = document.getElementById('levelGrid');
+    grid.innerHTML = '';
+    const maxLevel = Math.max(30, state.unlockedLevels + 10);
+    for (let i = 1; i <= maxLevel; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'level-cell';
+      const stars = state.levelStars[i] || 0;
+
+      if (i <= state.unlockedLevels) {
+        cell.classList.add(i < state.unlockedLevels ? 'completed' : 'unlocked');
+      } else {
+        cell.classList.add('locked');
+      }
+
+      cell.innerHTML = i + '<div class="stars">' + (stars > 0 ? '★'.repeat(stars) : '') + '</div>';
+      cell.addEventListener('click', function() {
+        if (i > state.unlockedLevels) {
+          showToast('Level ' + i + ' is locked!');
+          return;
+        }
+        playSound('click');
+        state.level = i;
+        startGame('classic', i, state.difficulty);
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  // ----- SHOP RENDERING -----
+  function renderShop() {
+    document.getElementById('shopCoins').textContent = state.coins;
+    const container = document.getElementById('shopItems');
+    container.innerHTML = '';
+
+    const items = [
+      { id: 'bomb', icon: '💣', name: 'Bomb Bubble', desc: 'Explodes nearby bubbles', cost: 100 },
+      { id: 'rainbow', icon: '🌈', name: 'Rainbow Bubble', desc: 'Matches any color', cost: 150 },
+      { id: 'fire', icon: '🔥', name: 'Fire Bubble', desc: 'Clears a row', cost: 120 },
+      { id: 'aim', icon: '🎯', name: 'Precision Aim', desc: 'Extended trajectory line', cost: 80 },
+      { id: 'slow', icon: '⏳', name: 'Slow Motion', desc: 'Slows everything down', cost: 90 }
+    ];
+
+    for (const item of items) {
+      const div = document.createElement('div');
+      div.className = 'shop-item';
+      div.innerHTML = `
+        <div class="shop-item-info">
+          <span class="shop-item-icon">${item.icon}</span>
+          <div>
+            <div class="shop-item-name">${item.name}</div>
+            <div class="shop-item-desc">${item.desc}</div>
+          </div>
+        </div>
+        <button class="shop-buy" ${state.coins < item.cost ? 'disabled' : ''}>🪙 ${item.cost}</button>
+      `;
+      div.querySelector('.shop-buy').addEventListener('click', function() {
+        if (state.coins >= item.cost) {
+          state.coins -= item.cost;
+          state.boosters[item.id] = (state.boosters[item.id] || 0) + 1;
+          playSound('booster');
+          showToast('Purchased ' + item.name + '!');
+          saveProgress();
+          renderShop();
+          updateHUD();
+          document.getElementById('menuCoins').textContent = state.coins;
+        }
+      });
+      container.appendChild(div);
+    }
+  }
+
+  // ----- POLYFILL roundRect -----
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+      if (typeof radii === 'number') radii = [radii, radii, radii, radii];
+      if (!Array.isArray(radii)) radii = [0, 0, 0, 0];
+      const [tl, tr, br, bl] = radii;
+      this.moveTo(x + tl, y);
+      this.lineTo(x + w - tr, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + tr);
+      this.lineTo(x + w, y + h - br);
+      this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+      this.lineTo(x + bl, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - bl);
+      this.lineTo(x, y + tl);
+      this.quadraticCurveTo(x, y, x + tl, y);
+      return this;
+    };
+  }
+
+  // ----- INIT -----
+  loadProgress();
+  document.getElementById('menuHighScore').textContent = state.bestScore;
+  document.getElementById('menuCoins').textContent = state.coins;
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+
+  // Start with menu shown
+  showMenu();
+
+  // Start game loop
+  requestAnimationFrame(gameLoop);
+
+})();
+</script>
+</body>
+</html>
