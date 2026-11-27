@@ -1,0 +1,1234 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048 | INFERNO</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg: #080707;
+    --panel: #11100f;
+    --panel2: #191513;
+    --red: #ff392c;
+    --orange: #ff762d;
+    --gold: #ffb64b;
+    --text: #f6f0e9;
+    --muted: #827773;
+    --border: rgba(255, 103, 48, 0.18);
+    --gap: 10px;
+    --pad: 12px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(139, 37, 16, .18), transparent 50%),
+        radial-gradient(ellipse at 100% 100%, rgba(255, 60, 20, .07), transparent 40%),
+        var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    z-index: 5;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,.025) 3px
+    );
+}
+
+button {
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+button:focus-visible {
+    outline: 2px solid var(--orange);
+    outline-offset: 3px;
+}
+
+.app {
+    width: min(100% - 32px, 520px);
+    margin: 0 auto;
+    padding: 36px 0 24px;
+}
+
+/* HEADER */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 26px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.brand-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 80, 36, .55);
+    background: linear-gradient(145deg, #32120c, #120b09);
+    box-shadow: 0 0 25px rgba(255, 60, 20, .13);
+    color: var(--orange);
+    font-size: 25px;
+}
+
+.brand-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 23px;
+    letter-spacing: 2px;
+}
+
+.brand-title span {
+    color: var(--orange);
+}
+
+.brand-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    margin-top: 4px;
+}
+
+.version {
+    color: var(--orange);
+    font: 10px 'Orbitron', sans-serif;
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    letter-spacing: 1px;
+}
+
+/* INTRO */
+
+.intro {
+    margin-bottom: 25px;
+}
+
+.intro h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(29px, 7vw, 40px);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 1px;
+}
+
+.intro h1 span {
+    color: var(--orange);
+    text-shadow: 0 0 24px rgba(255, 93, 29, .3);
+}
+
+.intro p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 15px;
+    letter-spacing: .5px;
+}
+
+.intro .line {
+    width: 48px;
+    height: 3px;
+    margin-top: 17px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+}
+
+/* SCORE CARDS */
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.stat {
+    background: linear-gradient(145deg, #171311, #100d0c);
+    border: 1px solid var(--border);
+    padding: 14px 17px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 35%;
+    background: linear-gradient(90deg, var(--red), transparent);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 27px;
+    font-weight: 700;
+    margin-top: 5px;
+    color: #fff;
+}
+
+.stat-value.best {
+    color: var(--gold);
+}
+
+/* TOOLBAR */
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 14px;
+}
+
+.left-tools {
+    display: flex;
+    gap: 9px;
+}
+
+.btn {
+    background: #171311;
+    border: 1px solid var(--border);
+    color: #c6b7ae;
+    padding: 11px 14px;
+    font-size: 13px;
+    letter-spacing: .6px;
+    font-weight: 700;
+    transition: .2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    background: #26150f;
+    border-color: rgba(255, 105, 48, .55);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: scale(.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #e53a23, #ff702c);
+    border: 1px solid #ff7941;
+    color: #fff;
+    box-shadow: 0 5px 18px rgba(255, 57, 25, .16);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #ff4c30, #ff8938);
+    border-color: var(--gold);
+}
+
+.btn-icon {
+    min-width: 42px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+/* BOARD */
+
+.board-wrap {
+    position: relative;
+}
+
+.board {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #171310;
+    border: 1px solid rgba(255, 102, 43, .25);
+    padding: var(--pad);
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    box-shadow:
+        0 0 0 4px rgba(255, 66, 24, .025),
+        0 15px 50px rgba(0,0,0,.4),
+        0 0 45px rgba(255, 57, 25, .04);
+}
+
+.board::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    background:
+        linear-gradient(90deg, rgba(255,60,20,.035), transparent 25%, transparent 75%, rgba(255,60,20,.035));
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: var(--gap);
+    width: 100%;
+    height: 100%;
+}
+
+.cell {
+    background: #25201d;
+    border: 1px solid rgba(255,255,255,.018);
+    border-radius: 3px;
+}
+
+/* POSITIONED TILES FOR SLIDING */
+
+.tiles-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.tile {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 800;
+    transition:
+        left .12s ease-in-out,
+        top .12s ease-in-out,
+        width .12s ease-in-out,
+        height .12s ease-in-out,
+        transform .12s ease,
+        background .12s ease,
+        box-shadow .12s ease;
+    will-change: left, top;
+    animation: tileSpawn .16s ease-out;
+    border: 1px solid rgba(255,255,255,.1);
+}
+
+@keyframes tileSpawn {
+    from { opacity: 0; transform: scale(.65); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.tile.merged {
+    animation: mergePop .2s ease-out;
+}
+
+@keyframes mergePop {
+    0% { transform: scale(.75); }
+    55% { transform: scale(1.14); }
+    100% { transform: scale(1); }
+}
+
+/* TILE COLOR SYSTEM */
+
+.tile-2 {
+    background: #39312a;
+    color: #f3dfc9;
+    border-color: #66503a;
+}
+
+.tile-4 {
+    background: #51402c;
+    color: #ffe5b5;
+    border-color: #886331;
+}
+
+.tile-8 {
+    background: #a3471d;
+    color: #fff2df;
+    box-shadow: 0 0 13px rgba(255, 94, 30, .10);
+}
+
+.tile-16 {
+    background: #c4441e;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(255, 69, 30, .12);
+}
+
+.tile-32 {
+    background: #e33220;
+    color: #fff;
+    box-shadow: 0 0 18px rgba(255, 59, 29, .18);
+}
+
+.tile-64 {
+    background: #ff4b21;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 71, 25, .22);
+}
+
+.tile-128 {
+    background: linear-gradient(135deg, #f56b28, #ffad42);
+    color: #240b04;
+    box-shadow: 0 0 23px rgba(255, 116, 37, .25);
+}
+
+.tile-256 {
+    background: linear-gradient(135deg, #ff852d, #ffc44b);
+    color: #2a0d02;
+    box-shadow: 0 0 25px rgba(255, 134, 38, .3);
+}
+
+.tile-512 {
+    background: linear-gradient(135deg, #ff4b22, #ffbc37);
+    color: #240b04;
+    box-shadow: 0 0 28px rgba(255, 95, 30, .35);
+}
+
+.tile-1024 {
+    background: linear-gradient(135deg, #ff391f, #ff8c2b, #ffd74b);
+    color: #200800;
+    box-shadow: 0 0 30px rgba(255, 91, 30, .4);
+}
+
+.tile-2048 {
+    background: linear-gradient(135deg, #ff2e1b, #ff932b, #ffe65b);
+    color: #190500;
+    box-shadow:
+        0 0 28px rgba(255, 84, 23, .55),
+        inset 0 0 15px rgba(255,255,255,.22);
+    animation: victoryGlow 1.4s infinite alternate;
+}
+
+@keyframes victoryGlow {
+    from { box-shadow: 0 0 18px rgba(255, 84, 23, .4); }
+    to { box-shadow: 0 0 38px rgba(255, 193, 59, .75); }
+}
+
+.tile-super {
+    background: linear-gradient(135deg, #8d1713, #ff4e21, #ffcf4b);
+    color: white;
+    box-shadow: 0 0 35px rgba(255, 104, 27, .55);
+}
+
+.tile-small {
+    font-size: clamp(12px, 3vw, 19px);
+}
+
+.tile-medium {
+    font-size: clamp(10px, 2.7vw, 16px);
+}
+
+.tile-large {
+    font-size: clamp(9px, 2.2vw, 13px);
+}
+
+/* STATUS */
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding: 11px 14px;
+    background: rgba(255, 78, 31, .04);
+    border: 1px solid rgba(255, 78, 31, .12);
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.status strong {
+    color: var(--orange);
+    font-weight: 700;
+}
+
+.status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 9px var(--orange);
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* HOW TO PLAY */
+
+.instructions {
+    margin-top: 25px;
+    border: 1px solid var(--border);
+    background: linear-gradient(145deg, #15110f, #0e0c0b);
+    padding: 17px 18px;
+}
+
+.instructions-title {
+    font: 700 11px 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    color: var(--orange);
+    margin-bottom: 12px;
+}
+
+.instructions p {
+    color: #a79a91;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.key {
+    display: inline-flex;
+    min-width: 25px;
+    padding: 2px 6px;
+    justify-content: center;
+    background: #26201c;
+    border: 1px solid #473329;
+    border-radius: 3px;
+    color: #f4b26c;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 0 2px;
+}
+
+.tip {
+    margin-top: 11px;
+    color: #76675d;
+    font-size: 12px;
+}
+
+.tip span {
+    color: var(--gold);
+}
+
+/* OVERLAY */
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    background: rgba(7, 5, 5, .86);
+    backdrop-filter: blur(6px);
+    animation: fadeIn .2s ease;
+}
+
+.overlay.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal {
+    width: 100%;
+    max-width: 330px;
+    text-align: center;
+    padding: 26px 20px;
+    border: 1px solid rgba(255, 94, 32, .42);
+    background: linear-gradient(145deg, #1b120e, #100c0a);
+    box-shadow: 0 0 45px rgba(255, 50, 20, .12);
+}
+
+.modal-icon {
+    font-size: 38px;
+    margin-bottom: 12px;
+}
+
+.modal h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 23px;
+    color: var(--orange);
+    margin-bottom: 9px;
+}
+
+.modal p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+}
+
+.modal-score {
+    font: 700 32px 'Orbitron', sans-serif;
+    color: white;
+    margin: 12px 0 20px;
+}
+
+.modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.modal-buttons .btn {
+    width: 100%;
+}
+
+.footer {
+    text-align: center;
+    color: #4f4540;
+    font: 9px 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    margin-top: 24px;
+}
+
+/* SCORE BUMP */
+
+.score-bump {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: var(--gold);
+    font: 700 14px 'Orbitron', sans-serif;
+    pointer-events: none;
+    animation: scoreBump .8s ease forwards;
+}
+
+@keyframes scoreBump {
+    0% { opacity: 0; transform: translateY(8px); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-24px); }
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 480px) {
+    .app {
+        padding-top: 22px;
+    }
+
+    .brand-title {
+        font-size: 20px;
+    }
+
+    .brand-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .btn {
+        padding: 10px 11px;
+        font-size: 12px;
+    }
+
+    .stat {
+        padding: 12px 14px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .board {
+        --gap: 7px;
+        --pad: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div class="brand">
+            <div class="brand-icon">🔥</div>
+            <div>
+                <div class="brand-title">2048<span> / INFERNO</span></div>
+                <div class="brand-sub">MERGE. EVOLVE. DOMINATE.</div>
+            </div>
+        </div>
+        <div class="version">ARCADE v1.0</div>
+    </header>
+
+    <section class="intro">
+        <h1>ENTER THE<br><span>FIRE GRID.</span></h1>
+        <p>Merge the tiles. Ignite the numbers. Reach 2048.</p>
+        <div class="line"></div>
+    </section>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="score">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Best Score</div>
+            <div class="stat-value best" id="best">0</div>
+        </div>
+    </section>
+
+    <section class="toolbar">
+        <div class="left-tools">
+            <button class="btn" id="undoBtn" title="Undo last move">↶ Undo</button>
+            <button class="btn btn-primary" id="restartBtn">⟳ Restart</button>
+        </div>
+        <button class="btn btn-icon" id="soundBtn" title="Toggle sound">🔊</button>
+    </section>
+
+    <div class="board-wrap">
+        <div class="board" id="board">
+            <div class="grid" id="grid"></div>
+            <div class="tiles-layer" id="tilesLayer"></div>
+
+            <!-- GAME OVER / WIN MODAL -->
+            <div class="overlay hidden" id="overlay">
+                <div class="modal">
+                    <div class="modal-icon" id="modalIcon">🔥</div>
+                    <h2 id="modalTitle">GAME OVER</h2>
+                    <p id="modalText">The grid has reached its limit.</p>
+                    <div class="modal-score" id="modalScore">0</div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-primary" id="modalRestart">⟳ PLAY AGAIN</button>
+                        <button class="btn" id="continueBtn">CONTINUE</button>
+                    </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status">
+        <div><span class="dot"></span><strong id="statusText">GRID ACTIVE</strong></div>
+        <div id="tileCount">TILES: 2</div>
+    </div>
+
+    <section class="instructions">
+        <div class="instructions-title">▸ HOW TO PLAY</div>
+        <p>
+            Use
+            <span class="key">↑</span>
+            <span class="key">↓</span>
+            <span class="key">←</span>
+            <span class="key">→</span>
+            or <strong>W A S D</strong> to move tiles.
+            Merge two identical numbers to create a bigger tile.
+            Every move adds a new tile. Reach <strong>2048</strong> to win.
+        </p>
+        <div class="tip"><span>PRO TIP:</span> Keep your largest tile in a corner and build around it.</div>
+    </section>
+
+    <footer class="footer">DESIGNED FOR THE BOLD // INFERNO ARCADE</footer>
+</div>
+
+<script>
+// =========================================
+// 2048 INFERNO — GAME ENGINE
+// =========================================
+
+const SIZE = 4;
+const TARGET = 2048;
+
+// DOM
+const boardEl = document.getElementById("board");
+const gridEl = document.getElementById("grid");
+const tilesLayer = document.getElementById("tilesLayer");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const statusText = document.getElementById("statusText");
+const tileCountEl = document.getElementById("tileCount");
+const overlay = document.getElementById("overlay");
+const modalIcon = document.getElementById("modalIcon");
+const modalTitle = document.getElementById("modalTitle");
+const modalText = document.getElementById("modalText");
+const modalScore = document.getElementById("modalScore");
+const continueBtn = document.getElementById("continueBtn");
+const soundBtn = document.getElementById("soundBtn");
+
+// Game state
+let board = [];
+let score = 0;
+let best = Number(localStorage.getItem("inferno2048Best")) || 0;
+let previousState = null;
+let soundEnabled = true;
+let gameOver = false;
+let won = false;
+let keepPlaying = false;
+let mergeCells = [];
+let spawnedCell = null;
+
+// Sound
+let audioCtx = null;
+
+function tone(freq = 440, duration = 0.07, type = "sine", volume = 0.04) {
+    if (!soundEnabled) return;
+
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+        // Sound is optional. The game still works if audio is unavailable.
+    }
+}
+
+function moveSound() {
+    tone(240, 0.045, "triangle", 0.035);
+}
+
+function mergeSound(value) {
+    tone(Math.min(900, 260 + Math.log2(value) * 65), 0.11, "sine", 0.07);
+}
+
+function winSound() {
+    tone(440, .12, "triangle", .05);
+    setTimeout(() => tone(660, .12, "triangle", .05), 120);
+    setTimeout(() => tone(880, .25, "triangle", .06), 250);
+}
+
+function loseSound() {
+    tone(220, .18, "sawtooth", .035);
+    setTimeout(() => tone(130, .28, "sawtooth", .035), 180);
+}
+
+// Create background cells
+for (let i = 0; i < 16; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    gridEl.appendChild(cell);
+}
+
+// Initialize
+function initGame() {
+    board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+    score = 0;
+    gameOver = false;
+    won = false;
+    keepPlaying = false;
+    previousState = null;
+    mergeCells = [];
+    spawnedCell = null;
+
+    hideOverlay();
+
+    addRandomTile();
+    addRandomTile();
+
+    render();
+    updateStatus("GRID ACTIVE");
+    updateUndoButton();
+}
+
+// Add a random tile (2 or 4)
+function addRandomTile() {
+    const empty = [];
+
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === 0) empty.push({ r, c });
+        }
+    }
+
+    if (!empty.length) return null;
+
+    const spot = empty[Math.floor(Math.random() * empty.length)];
+    const value = Math.random() < 0.9 ? 2 : 4;
+
+    board[spot.r][spot.c] = value;
+    spawnedCell = { ...spot };
+
+    return spot;
+}
+
+// Render board
+function render() {
+    tilesLayer.innerHTML = "";
+
+    const style = getComputedStyle(boardEl);
+    const pad = parseFloat(style.paddingLeft);
+    const gap = parseFloat(getComputedStyle(gridEl).gap);
+    const boardWidth = boardEl.clientWidth;
+    const cellSize = (boardWidth - 2 * pad - 3 * gap) / SIZE;
+
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            const value = board[r][c];
+            if (!value) continue;
+
+            const tile = document.createElement("div");
+            tile.className = "tile " + getTileClass(value);
+
+            if (value >= 1024) tile.classList.add("tile-large");
+            else if (value >= 128) tile.classList.add("tile-medium");
+            else tile.classList.add("tile-small");
+
+            if (mergeCells.some(p => p.r === r && p.c === c)) {
+                tile.classList.add("merged");
+            }
+
+            tile.textContent = value;
+
+            tile.style.width = cellSize + "px";
+            tile.style.height = cellSize + "px";
+            tile.style.left = (pad + c * (cellSize + gap)) + "px";
+            tile.style.top = (pad + r * (cellSize + gap)) + "px";
+
+            tilesLayer.appendChild(tile);
+        }
+    }
+
+    scoreEl.textContent = score.toLocaleString();
+    bestEl.textContent = best.toLocaleString();
+
+    const count = board.flat().filter(v => v !== 0).length;
+    tileCountEl.textContent = "TILES: " + count;
+
+    mergeCells = [];
+    spawnedCell = null;
+}
+
+function getTileClass(value) {
+    if (value <= 1024) return "tile-" + value;
+    if (value === 2048) return "tile-2048";
+    return "tile-super";
+}
+
+// Save best score
+function updateBest() {
+    if (score > best) {
+        best = score;
+        localStorage.setItem("inferno2048Best", best);
+    }
+}
+
+// Snapshot for undo
+function saveSnapshot() {
+    previousState = {
+        board: board.map(row => [...row]),
+        score,
+        won,
+        keepPlaying
+    };
+}
+
+function updateUndoButton() {
+    document.getElementById("undoBtn").disabled = !previousState;
+    document.getElementById("undoBtn").style.opacity = previousState ? "1" : ".45";
+}
+
+// =========================================
+// MOVEMENT + MERGE
+// =========================================
+
+// Return coordinate list in movement order
+function getLineCoordinates(direction, line) {
+    const coords = [];
+
+    for (let i = 0; i < SIZE; i++) {
+        if (direction === "left") coords.push({ r: line, c: i });
+        if (direction === "right") coords.push({ r: line, c: SIZE - 1 - i });
+        if (direction === "up") coords.push({ r: i, c: line });
+        if (direction === "down") coords.push({ r: SIZE - 1 - i, c: line });
+    }
+
+    return coords;
+}
+
+function move(direction) {
+    if (gameOver || (won && !keepPlaying)) return;
+
+    const oldBoard = board.map(row => [...row]);
+    const oldScore = score;
+    let moved = false;
+    let gained = 0;
+    const merged = [];
+
+    for (let line = 0; line < SIZE; line++) {
+        const coords = getLineCoordinates(direction, line);
+
+        // Get values along this line
+        const values = coords.map(p => board[p.r][p.c]);
+
+        // Remove empty spaces
+        const compact = values.filter(v => v !== 0);
+
+        // Merge equal neighboring tiles once
+        const result = [];
+        let i = 0;
+
+        while (i < compact.length) {
+            if (i + 1 < compact.length && compact[i] === compact[i + 1]) {
+                const newValue = compact[i] * 2;
+                result.push(newValue);
+                gained += newValue;
+                merged.push(coords[result.length - 1]);
+                i += 2;
+            } else {
+                result.push(compact[i]);
+                i++;
+            }
+        }
+
+        while (result.length < SIZE) result.push(0);
+
+        // Write line back to board
+        for (let i = 0; i < SIZE; i++) {
+            const p = coords[i];
+            board[p.r][p.c] = result[i];
+        }
+
+        if (values.some((v, i) => v !== result[i])) moved = true;
+    }
+
+    if (!moved) return;
+
+    // Undo state before applying changes
+    previousState = {
+        board: oldBoard,
+        score: oldScore,
+        won,
+        keepPlaying
+    };
+
+    score += gained;
+    updateBest();
+
+    mergeCells = merged;
+    addRandomTile();
+
+    render();
+    updateUndoButton();
+
+    if (gained > 0) mergeSound(gained);
+    else moveSound();
+
+    if (!won && board.flat().some(v => v >= TARGET)) {
+        won = true;
+        updateStatus("TARGET REACHED!");
+        showWin();
+        winSound();
+        return;
+    }
+
+    if (!canMove()) {
+        gameOver = true;
+        updateStatus("GRID TERMINATED");
+        showGameOver();
+        loseSound();
+        return;
+    }
+
+    if (gained > 0) showScoreBump(gained);
+    updateStatus("GRID ACTIVE");
+}
+
+// =========================================
+// GAME CHECKS
+// =========================================
+
+function canMove() {
+    // Empty cell available
+    if (board.flat().some(v => v === 0)) return true;
+
+    // Any horizontal or vertical merge possible
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (c < SIZE - 1 && board[r][c] === board[r][c + 1]) return true;
+            if (r < SIZE - 1 && board[r][c] === board[r + 1][c]) return true;
+        }
+    }
+
+    return false;
+}
+
+function showWin() {
+    modalIcon.textContent = "🔥";
+    modalTitle.textContent = "GRID IGNITED";
+    modalText.textContent = "You forged the legendary 2048 tile. The fire is yours.";
+    modalScore.textContent = score.toLocaleString();
+    continueBtn.style.display = "block";
+    continueBtn.textContent = "KEEP PLAYING";
+    overlay.classList.remove("hidden");
+}
+
+function showGameOver() {
+    modalIcon.textContent = "☠";
+    modalTitle.textContent = "GRID TERMINATED";
+    modalText.textContent = "No more moves remain. The fire fades...";
+    modalScore.textContent = score.toLocaleString();
+    continueBtn.style.display = "none";
+    overlay.classList.remove("hidden");
+}
+
+function hideOverlay() {
+    overlay.classList.add("hidden");
+}
+
+function updateStatus(text) {
+    statusText.textContent = text;
+}
+
+// =========================================
+// UNDO
+// =========================================
+
+function undo() {
+    if (!previousState) return;
+
+    board = previousState.board.map(row => [...row]);
+    score = previousState.score;
+    won = previousState.won;
+    keepPlaying = previousState.keepPlaying;
+
+    gameOver = false;
+    previousState = null;
+    mergeCells = [];
+    spawnedCell = null;
+
+    hideOverlay();
+    render();
+    updateStatus("MOVE REVERSED");
+    updateUndoButton();
+    tone(380, .08, "triangle", .05);
+}
+
+// =========================================
+// SCORE ANIMATION
+// =========================================
+
+function showScoreBump(amount) {
+    const bump = document.createElement("div");
+    bump.className = "score-bump";
+    bump.textContent = "+" + amount;
+
+    const stat = document.querySelector(".stats .stat:first-child");
+    stat.style.position = "relative";
+    stat.appendChild(bump);
+
+    setTimeout(() => bump.remove(), 850);
+}
+
+// =========================================
+// INPUT
+// =========================================
+
+document.addEventListener("keydown", e => {
+    const map = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+        ArrowDown: "down",
+        a: "left",
+        d: "right",
+        w: "up",
+        s: "down",
+        A: "left",
+        D: "right",
+        W: "up",
+        S: "down"
+    };
+
+    const direction = map[e.key];
+    if (!direction) return;
+
+    e.preventDefault();
+    move(direction);
+});
+
+// =========================================
+// MOBILE SWIPE
+// =========================================
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+boardEl.addEventListener("touchstart", e => {
+    const touch = e.changedTouches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+}, { passive: true });
+
+boardEl.addEventListener("touchend", e => {
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+
+    const threshold = 30;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+        move(dx > 0 ? "right" : "left");
+    } else {
+        move(dy > 0 ? "down" : "up");
+    }
+}, { passive: true });
+
+// =========================================
+// BUTTONS
+// =========================================
+
+document.getElementById("restartBtn").addEventListener("click", initGame);
+document.getElementById("modalRestart").addEventListener("click", initGame);
+document.getElementById("undoBtn").addEventListener("click", undo);
+
+continueBtn.addEventListener("click", () => {
+    keepPlaying = true;
+    hideOverlay();
+    updateStatus("INFERNO MODE");
+});
+
+soundBtn.addEventListener("click", () => {
+    soundEnabled = !soundEnabled;
+    soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
+    soundBtn.title = soundEnabled ? "Sound on" : "Sound off";
+    if (soundEnabled) tone(440, .08, "sine", .04);
+});
+
+// Recalculate tile positions on resize
+window.addEventListener("resize", render);
+
+// Launch
+initGame();
+</script>
+
+</body>
+</html>
